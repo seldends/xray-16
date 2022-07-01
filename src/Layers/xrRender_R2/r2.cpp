@@ -705,7 +705,30 @@ void CRender::BeforeRender()
     if (IGame_Persistent::MainMenuActiveOrLevelNotExist())
         return;
 
+    ViewBase.CreateFromMatrix(Device.mFullTransform, FRUSTUM_P_LRTB + FRUSTUM_P_FAR);
     ProcessHOMTask = &TaskScheduler->AddTask("MT-HOM", { &HOM, &CHOM::MT_RENDER });
+    if (pLastSector)
+    {
+        CreateMainRenderablesListTask = &TaskScheduler->AddTask("CreateMainRenderablesList", +[](Task& /*thisTask*/, void* /*data*/)
+        {
+            RImplementation.CreateMainRenderablesList();
+        });
+    }
+}
+
+void CRender::CreateMainRenderablesList()
+{
+    // Traverse object database
+    g_SpatialSpace->q_frustum(lstRenderablesMain, ISpatial_DB::O_ORDERED,
+        STYPE_RENDERABLE + STYPE_LIGHTSOURCE, ViewBase);
+
+    // Exact sorting order (front-to-back)
+    std::sort(lstRenderablesMain.begin(), lstRenderablesMain.end(), [](ISpatial* _1, ISpatial* _2)
+    {
+        const float d1 = _1->GetSpatialData().sphere.P.distance_to_sqr(Device.vCameraPosition);
+        const float d2 = _2->GetSpatialData().sphere.P.distance_to_sqr(Device.vCameraPosition);
+        return d1 < d2;
+    });
 }
 
 void CRender::OnFrame()

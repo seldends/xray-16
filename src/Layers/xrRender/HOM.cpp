@@ -272,10 +272,8 @@ void CHOM::Render(CFrustum& base)
 
 void CHOM::MT_RENDER(Task& /*thisTask*/, void* /*data*/)
 {
-    CFrustum ViewBase;
-    ViewBase.CreateFromMatrix(Device.mFullTransform, FRUSTUM_P_LRTB + FRUSTUM_P_FAR);
     Enable();
-    Render(ViewBase);
+    Render(RImplementation.ViewBase);
 }
 
 ICF BOOL xform_b0(Fvector2& min, Fvector2& max, float& minz, const Fmatrix& X, float _x, float _y, float _z)

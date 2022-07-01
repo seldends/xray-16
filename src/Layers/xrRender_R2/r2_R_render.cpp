@@ -8,13 +8,6 @@
 
 #include "Layers/xrRender/FBasicVisual.h"
 
-IC bool pred_sp_sort(ISpatial* _1, ISpatial* _2)
-{
-    float d1 = _1->GetSpatialData().sphere.P.distance_to_sqr(Device.vCameraPosition);
-    float d2 = _2->GetSpatialData().sphere.P.distance_to_sqr(Device.vCameraPosition);
-    return d1 < d2;
-}
-
 void CRender::render_main(Fmatrix& m_ViewProjection, bool _fportals)
 {
     PIX_EVENT(render_main);
@@ -47,20 +40,21 @@ void CRender::render_main(Fmatrix& m_ViewProjection, bool _fportals)
         // Traverse frustums
         if (psDeviceFlags.test(rsDrawDynamic))
         {
-            // Traverse object database
-            g_SpatialSpace->q_frustum(
-                lstRenderables, ISpatial_DB::O_ORDERED, STYPE_RENDERABLE + STYPE_LIGHTSOURCE, ViewBase);
-
-            // Exact sorting order (front-to-back)
-            std::sort(lstRenderables.begin(), lstRenderables.end(), pred_sp_sort);
+            if (!CreateMainRenderablesListTask)
+                CreateMainRenderablesList();
+            else
+            {
+                TaskScheduler->Wait(*CreateMainRenderablesListTask);
+                CreateMainRenderablesListTask = nullptr;
+            }
 
             // Determine visibility for dynamic part of scene
             u32 uID_LTRACK = 0xffffffff;
             if (phase == PHASE_NORMAL)
             {
                 uLastLTRACK++;
-                if (lstRenderables.size())
-                    uID_LTRACK = uLastLTRACK % lstRenderables.size();
+                if (lstRenderablesMain.size())
+                    uID_LTRACK = uLastLTRACK % lstRenderablesMain.size();
 
                 // update light-vis for current entity / actor
                 IGameObject* O = g_pGameLevel->CurrentViewEntity();
@@ -72,9 +66,9 @@ void CRender::render_main(Fmatrix& m_ViewProjection, bool _fportals)
                 }
             }
 
-            for (u32 o_it = 0; o_it < lstRenderables.size(); o_it++)
+            for (u32 o_it = 0; o_it < lstRenderablesMain.size(); o_it++)
             {
-                ISpatial* spatial = lstRenderables[o_it];
+                ISpatial* spatial = lstRenderablesMain[o_it];
                 spatial->spatial_updatesector();
                 CSector* sector = (CSector*)spatial->GetSpatialData().sector;
                 if (0 == sector)

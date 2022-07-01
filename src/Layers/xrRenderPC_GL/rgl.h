@@ -155,6 +155,7 @@ public:
     CDB::MODEL* rmPortals;
     CHOM HOM;
     Task* ProcessHOMTask;
+    Task* CreateMainRenderablesListTask;
     R_occlusion HWOCC;
 
     // Global vertex-buffer container
@@ -393,6 +394,9 @@ private:
 
 protected:
     void ScreenshotImpl(ScreenshotMode mode, LPCSTR name, CMemoryWriter* memory_writer) override;
+
+private:
+    void CreateMainRenderablesList();
 
 private:
     FS_FileSet m_file_set;

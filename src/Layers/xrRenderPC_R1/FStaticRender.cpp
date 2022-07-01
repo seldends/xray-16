@@ -163,7 +163,40 @@ void CRender::BeforeRender()
     if (IGame_Persistent::MainMenuActiveOrLevelNotExist())
         return;
 
+    ViewBase.CreateFromMatrix(Device.mFullTransform, FRUSTUM_P_LRTB + FRUSTUM_P_FAR);
     ProcessHOMTask = &TaskScheduler->AddTask("MT-HOM", { &HOM, &CHOM::MT_RENDER });
+    if (pLastSector)
+    {
+        CreateMainRenderablesListTask = &TaskScheduler->AddTask("CreateMainRenderablesList", +[](Task& /*thisTask*/, void* /*data*/)
+        {
+            RImplementation.CreateMainRenderablesList();
+        });
+    }
+}
+
+void CRender::CreateMainRenderablesList()
+{
+    // Construct new transform, since Device.mFullTransform still
+    // may be actual for previous frame at this time,
+    // but Device.mProject and Device.mView are already updated
+    Fmatrix fullTransform;
+    fullTransform.identity();
+    fullTransform.mul(Device.mProject, Device.mView);
+
+    CFrustum viewBase;
+    viewBase.CreateFromMatrix(fullTransform, FRUSTUM_P_LRTB + FRUSTUM_P_FAR);
+
+    // Traverse object database
+    g_SpatialSpace->q_frustum(lstRenderablesMain, ISpatial_DB::O_ORDERED,
+        STYPE_RENDERABLE + STYPE_LIGHTSOURCE, viewBase);
+
+    // Exact sorting order (front-to-back)
+    std::sort(lstRenderablesMain.begin(), lstRenderablesMain.end(), [](ISpatial* _1, ISpatial* _2)
+    {
+        const float d1 = _1->GetSpatialData().sphere.P.distance_to_sqr(Device.vCameraPosition);
+        const float d2 = _2->GetSpatialData().sphere.P.distance_to_sqr(Device.vCameraPosition);
+        return d1 < d2;
+    });
 }
 
 void CRender::OnFrame()
@@ -502,7 +535,7 @@ void CRender::Calculate()
             pPortal->bDualRender = TRUE;
         }
     }
-    
+
     //
     Lights.Update();
 
@@ -533,11 +566,13 @@ void CRender::Calculate()
         // Traverse object database
         if (psDeviceFlags.test(rsDrawDynamic))
         {
-            g_SpatialSpace->q_frustum(
-                lstRenderables, ISpatial_DB::O_ORDERED, STYPE_RENDERABLE + STYPE_LIGHTSOURCE, ViewBase);
-
-            // Exact sorting order (front-to-back)
-            std::sort(lstRenderables.begin(), lstRenderables.end(), pred_sp_sort);
+            if (!CreateMainRenderablesListTask)
+                CreateMainRenderablesList();
+            else
+            {
+                TaskScheduler->Wait(*CreateMainRenderablesListTask);
+                CreateMainRenderablesListTask = nullptr;
+            }
 
             if (ps_r__common_flags.test(RFLAG_ACTOR_SHADOW)) // Actor Shadow (Sun + Light)
                 g_hud->Render_First(); // R1 shadows
@@ -549,8 +584,8 @@ void CRender::Calculate()
             if (phase == PHASE_NORMAL)
             {
                 uLastLTRACK++;
-                if (lstRenderables.size())
-                    uID_LTRACK = uLastLTRACK % lstRenderables.size();
+                if (lstRenderablesMain.size())
+                    uID_LTRACK = uLastLTRACK % lstRenderablesMain.size();
 
                 // update light-vis for current entity / actor
                 IGameObject* O = g_pGameLevel->CurrentViewEntity();
@@ -561,9 +596,9 @@ void CRender::Calculate()
                         R->update(O);
                 }
             }
-            for (u32 o_it = 0; o_it < lstRenderables.size(); o_it++)
+            for (u32 o_it = 0; o_it < lstRenderablesMain.size(); o_it++)
             {
-                ISpatial* spatial = lstRenderables[o_it];
+                ISpatial* spatial = lstRenderablesMain[o_it];
                 spatial->spatial_updatesector();
                 CSector* sector = (CSector*)spatial->GetSpatialData().sector;
                 if (nullptr == sector)

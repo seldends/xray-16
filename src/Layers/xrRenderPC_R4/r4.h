@@ -156,6 +156,7 @@ public:
     CDB::MODEL* rmPortals;
     CHOM HOM;
     Task* ProcessHOMTask;
+    Task* CreateMainRenderablesListTask;
     R_occlusion HWOCC;
 
     // Global vertex-buffer container
@@ -252,7 +253,7 @@ public:
         o_sun = 0.75f * LT.get_sun();
         CopyMemory(o_hemi_cube, LT.get_hemi_cube(), CROS_impl::NUM_FACES * sizeof(float));
     }
-    
+
     void apply_lmaterial()
     {
         R_constant* C = RCache.get_c(c_sbase)._get(); // get sampler
@@ -384,6 +385,9 @@ private:
 
 protected:
     virtual void ScreenshotImpl(ScreenshotMode mode, LPCSTR name, CMemoryWriter* memory_writer);
+
+private:
+    void CreateMainRenderablesList();
 
 private:
     FS_FileSet m_file_set;

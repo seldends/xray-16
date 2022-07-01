@@ -46,6 +46,7 @@ public:
     xrXRC Sectors_xrc;
     CDB::MODEL* rmPortals;
     Task* ProcessHOMTask;
+    Task* CreateMainRenderablesListTask;
     CHOM HOM;
 
     // Global containers
@@ -206,6 +207,9 @@ public:
 
 protected:
     virtual void ScreenshotImpl(ScreenshotMode mode, LPCSTR name, CMemoryWriter* memory_writer) override;
+
+private:
+    void CreateMainRenderablesList();
 
 private:
     FS_FileSet m_file_set;
