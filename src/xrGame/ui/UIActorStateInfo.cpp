@@ -111,6 +111,7 @@ void ui_actor_state_wnd::UpdateActorInfo(CInventoryOwner* owner)
     m_state[stt_bleeding]->show_static(false, 1);
     m_state[stt_bleeding]->show_static(false, 2);
     m_state[stt_bleeding]->show_static(false, 3);
+    m_state[stt_bleeding]->set_progress(value);
 
     if (!fis_zero(value, EPS))
     {
@@ -127,6 +128,7 @@ void ui_actor_state_wnd::UpdateActorInfo(CInventoryOwner* owner)
     m_state[stt_radiation]->show_static(false, 1);
     m_state[stt_radiation]->show_static(false, 2);
     m_state[stt_radiation]->show_static(false, 3);
+    m_state[stt_radiation]->set_progress(value);
 
     if (!fis_zero(value, EPS))
     {
