@@ -40,6 +40,8 @@ protected:
     CUIStatic* m_ind_helmet_broken;
     CUIStatic* m_ind_outfit_broken;
     CUIStatic* m_ind_overweight;
+    CUIStatic* m_ind_health;
+    CUIStatic* m_ind_psy_health;
 
 public:
     CUIStatic* m_ind_boost_psy;

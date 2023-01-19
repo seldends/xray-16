@@ -126,6 +126,8 @@ void CUIMainIngameWnd::Init()
     m_ind_helmet_broken = UIHelper::CreateStatic(uiXml, "indicator_helmet_broken", this, false);
     m_ind_outfit_broken = UIHelper::CreateStatic(uiXml, "indicator_outfit_broken", this, false);
     m_ind_overweight = UIHelper::CreateStatic(uiXml, "indicator_overweight", this, false);
+    m_ind_health = UIHelper::CreateStatic(uiXml, "indicator_health", this, false);
+    m_ind_psy_health = UIHelper::CreateStatic(uiXml, "indicator_psy_health", this, false);
 
     if ((m_ind_boost_psy = UIHelper::CreateStatic(uiXml, "indicator_booster_psy", this, false)))
         m_ind_boost_psy->Show(false);
@@ -799,6 +801,67 @@ void CUIMainIngameWnd::UpdateMainIndicators()
             //	m_ind_overweight->InitTexture("ui_inGame2_circle_Overweight_yellow");
             else
                 m_ind_overweight->InitTexture("ui_inGame2_circle_Overweight_yellow");
+        }
+    }
+
+    // Health icon
+    if (m_ind_health)
+    {
+        const float health = pActor->conditions().GetHealth();
+        const float health_koef = 1.0f - health;
+        if (fis_zero(health_koef, EPS))
+        {
+            m_ind_health->Show(false);
+            m_ind_health->ResetColorAnimation();
+        }
+        else
+        {
+            m_ind_health->Show(true);
+            if (health_koef < 0.35f)
+            {
+                m_ind_health->InitTexture("ui_inGame2_circle_health_green");
+                m_ind_health->SetColorAnimation("ui_slow_blinking_alpha", flags);
+            }
+            else if (health_koef < 0.7f)
+            {
+                m_ind_health->InitTexture("ui_inGame2_circle_health_yellow");
+                m_ind_health->SetColorAnimation("ui_medium_blinking_alpha", flags);
+            }
+            else
+            {
+                m_ind_health->InitTexture("ui_inGame2_circle_health_red");
+                m_ind_health->SetColorAnimation("ui_fast_blinking_alpha", flags);
+            }
+        }
+    }
+
+    // Psy health icon
+    if (m_ind_psy_health)
+    {
+        const float psy_health_koef = pActor->conditions().GetPsy();
+        if (fis_zero(psy_health_koef, EPS))
+        {
+            m_ind_psy_health->Show(false);
+            m_ind_psy_health->ResetColorAnimation();
+        }
+        else
+        {
+            m_ind_psy_health->Show(true);
+            if (psy_health_koef < 0.35f)
+            {
+                m_ind_psy_health->InitTexture("ui_inGame2_circle_psy_health_green");
+                m_ind_psy_health->SetColorAnimation("ui_slow_blinking_alpha", flags);
+            }
+            else if (psy_health_koef < 0.7f)
+            {
+                m_ind_psy_health->InitTexture("ui_inGame2_circle_psy_health_yellow");
+                m_ind_psy_health->SetColorAnimation("ui_medium_blinking_alpha", flags);
+            }
+            else
+            {
+                m_ind_psy_health->InitTexture("ui_inGame2_circle_psy_health_red");
+                m_ind_psy_health->SetColorAnimation("ui_fast_blinking_alpha", flags);
+            }
         }
     }
 }
